@@ -22,6 +22,7 @@ for fi in listdir("./Data/2496stereo/") :
 # average frequency = average frequency that crepe detected within a given bound
 ###
 for fi in listdir("./Data/2496stereoAnalysis/"):
+    print(fi)
     with open("./Data/2496stereoAnalysis/" + fi) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0

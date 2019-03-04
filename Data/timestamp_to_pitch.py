@@ -7,7 +7,10 @@ import csv, numpy as np, librosa
 # returns: array of pitches at those timestamps
 def timestamp_to_pitch(filename, beats):
     pitches = []
-    with open('./Data/2496stereo/' + filename + ".csv") as csv_file:
+    print(beats)
+    with open('./2496stereo/' + filename[:-3] + "f0.csv") as csv_file:
+        
+    # with open('./2496stereoAnalysis/Guitar.mf.sulA.C4E4.f0.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         for row in csv_reader:
@@ -16,12 +19,9 @@ def timestamp_to_pitch(filename, beats):
             else:
                 curr_time = float(row[0])
                 for beat in beats:
-                    # print('row type: ',type(row[0]))
-                    # print('beat type: ',type(beat))
                     if curr_time == beat:
-                        print("??")
                         pitches.append(float(row[1]))
                 line_count += 1
-        x = librosa.hz_to_note(pitches)
-        print(x)
-    return pitches
+        # print(pitches)
+        notes = librosa.hz_to_note(pitches)
+    return notes, pitches
