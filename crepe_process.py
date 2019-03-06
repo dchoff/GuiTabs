@@ -65,7 +65,7 @@ for fi in listdir("./Data/2496stereoAnalysis/"):
                 line_count += 1
         if frequencies_detected:
             freq_range_detected.append(frequencies_detected)
-            timestamp_ranges.append((start_time,endx    _time))
+            timestamp_ranges.append((start_time,end_time))
         for note in freq_range_detected:
             # print(note)
             notes_detected.append("{0:.2f}".format(np.mean(note)))
