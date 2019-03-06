@@ -21,50 +21,56 @@ for fi in listdir("./Data/2496stereo/") :
 # time = Starting time of the average frequency within our given range
 # average frequency = average frequency that crepe detected within a given bound
 ###
+
+# def findDurationsNotes()
 for fi in listdir("./Data/2496stereoAnalysis/"):
-    print(fi)
     with open("./Data/2496stereoAnalysis/" + fi) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         notes_detected = []
         freq_range_detected = []
-        frequencies_detected = []
+        frequencies_detected = [] 
         timestamp_ranges = []
         timestamps = []
-        print("For",fi)
+        end_time = 0.0
+        print(fi)
         for row in csv_reader:
             # Print Column Titles
             if line_count == 0:
                 line_count += 1
-            # Set Initial values on first line of values
-            elif line_count == 1:
-                prev_note_freq = row[1]
-                prev_note_timestamp = row[0]
-                frequencies_detected.append(float(prev_note_freq))
-                line_count += 1
             # Capture 20Hz differences as different notes for rest of values
             else:
                 curr_conf = float(row[2])
-                curr_freq = row[1]
-                curr_time = row[0]
-                if curr_conf <= 0.6:
-                    if(frequencies_detected):
-                        freq_range_detected.append(frequencies_detected)
-                        timestamp_ranges.append(curr_time)
-                    frequencies_detected = []
+                curr_freq = float(row[1])
+                curr_time = float(row[0])
+                # Set Initial values on first line of values
+                if not frequencies_detected and curr_conf >= 0.60:
+                    ref_note_freq = curr_freq
+                    start_time = curr_time
+                    frequencies_detected.append(curr_freq)
+                    line_count += 1
                     continue
-                if np.absolute(float(curr_freq) - float(prev_note_freq)) > 20:
-                    prev_note_freq = curr_freq
-                    if(frequencies_detected):
+
+                if curr_conf < 0.6 or np.isnan(curr_conf):
+                    continue
+                
+                if np.absolute(curr_freq - ref_note_freq) < 10:
+                    end_time = curr_time
+                    frequencies_detected.append(curr_freq)
+                else:
+                    if frequencies_detected:
                         freq_range_detected.append(frequencies_detected)
-                        timestamp_ranges.append(curr_time)
+                        timestamp_ranges.append((start_time, end_time)) 
                     frequencies_detected = []
-                else: 
-                    frequencies_detected.append(float(curr_freq))
                 line_count += 1
-        # if we're at the end:
-        # freq_range_detected.append(frequencies_detected)
-        for freq_range in freq_range_detected:
-            notes_detected.append("{0:.2f}".format(np.mean(freq_range)))
+        if frequencies_detected:
+            freq_range_detected.append(frequencies_detected)
+            timestamp_ranges.append((start_time,endx    _time))
+        for note in freq_range_detected:
+            # print(note)
+            notes_detected.append("{0:.2f}".format(np.mean(note)))
         note_time_ranges = zip(timestamp_ranges,notes_detected)
+        # if not list(note_time_ranges):
+        #     print("Crepe wasn't confident about anything in this file.")
         print(list(note_time_ranges))
+

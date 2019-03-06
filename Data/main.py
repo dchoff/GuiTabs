@@ -13,4 +13,7 @@ def main(name):
 	round_bt = np.round(bt, decimals=2)
 	notes, pitches = tp.timestamp_to_pitch(name, round_bt)
 	##note_names = librosa.hz_to_note(pitches)
-	return pitches
+	return notes
+
+notes = main("Guitar.ff.sulA.C4E4.wav")
+print(notes)
