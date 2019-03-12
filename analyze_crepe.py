@@ -14,10 +14,8 @@ Inputs:
 --onsets: Contains potential beat onsets to start from in the Crepe file
 
 Output:
-Three parallel arrays that can be used to calculate durattions of a pitch and the note that pitch
-    approximates 
---frequency_ranges
-A Tuple in the form ()
+A Tuple in the form ((starttime,endtime),frequency)
+Where we can use this to find duration of a frequency/pitch
 '''
 def readCrepe(filename, onsets=[]):
     with open("./Data/2496stereoAnalysis/" + filename + '.f0.csv') as csv_file:
@@ -48,11 +46,6 @@ def readCrepe(filename, onsets=[]):
                     continue
 
                 if curr_conf < 0.6 or np.isnan(curr_conf):
-                    # Band-Aid?
-                    # conf_counter += 1
-                    # if(conf_counter >= 10):
-                    #     conf_counter = 0
-                    #     end_time = curr_time
                     continue
                 
                 if np.absolute(curr_freq - ref_note_freq) < 10:
@@ -75,27 +68,24 @@ def readCrepe(filename, onsets=[]):
         #     print("Crepe wasn't confident about anything in this file.")
         return list(pitches_and_times)
                     
-A2_B2 = readCrepe('Guitar.mf.sulA.C4E4')
-print("a2, b2:",A2_B2)
-
-def findDurationsPitches(pitches_and_times):
+def findDurationsNotes(pitches_and_times):
     notes = []
     durations = []
     for pair in pitches_and_times:
         pitch = pair[1]
         times = pair[0]
-        print ('times', times)
         start_time = times[0]
         end_time = times[1]
-        print('s', start_time)
-        print('e',end_time)
         duration = end_time - start_time
-        print('d', duration)
-        print('pitch', pitch)
         note = librosa.hz_to_note(float(pitch))
-        durations.append(duration)
+        durations.append(round(duration,2))
         notes.append(note)
     return durations, notes
 
-durations, notes = findDurationsPitches(A2_B2)
-print((durations,notes))
+pitches_times = readCrepe('Guitar.mf.sulD.C4Ab4')
+durations, notes = findDurationsNotes(pitches_times)
+print(durations, notes)
+
+pitches_times = readCrepe('Guitar.ff.sulA.A2B2')
+durations, notes = findDurationsNotes(pitches_times)
+print(durations, notes)
