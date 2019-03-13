@@ -106,9 +106,11 @@ def findDurationsNotes(pitches_and_times):
         pitch = pair[1]
         times = pair[0]
         start_time = times[0]
-        # print(start_time, librosa.hz_to_note(float(pitch)))
+        print(start_time, float(pitch))
         end_time = times[1]
         duration = end_time - start_time
+        if float(pitch) == 0.0:
+           continue
         note = librosa.hz_to_note(float(pitch))
         durations.append(round(duration,2))
         notes.append(note)

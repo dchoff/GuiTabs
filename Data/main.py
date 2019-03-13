@@ -12,6 +12,13 @@ import guitab as gt
 def findBeats(aud, sr):
 	tempo, bt = librosa.beat.beat_track(aud, sr=sr, units='time', trim=False)
 	return bt
+	
+def normalize(aud):
+	max = np.max(aud)
+	div = np.full(max)
+
+	norm_aud = np.divide(aud,div)
+	return norm_aud
 
 def main(name):
 	start = timer()
@@ -21,7 +28,7 @@ def main(name):
 	bt = findBeats(aud, sr)
 	round_bt = np.round(bt, decimals=2)
 	#run crepe
-	duration, notes = rco.fileOnsetsToDurationsNotes(name[:-4], round_bt)
+	duration, notes = rco.fileOnsetsToDurationsNotes(name[:-4])
 	#call lilypond
 	gt.write_ly_file(name[:-4], notes)
 	gt.generate_pdf(name[:-4])
