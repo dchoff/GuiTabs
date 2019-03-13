@@ -7,12 +7,12 @@ def generate_pdf(file_name):
 	Input: A file_name with no file type suffix
 	Output: A PDF which is opened in a new window
 	"""
-	if os.path.isfile('./ly_files/{0}.ly'.format(file_name)):
-		subprocess.run("lilypond --pdf ./ly_files/{0}.ly".format(file_name))
+	if os.path.isfile('../bin/ly_files/{0}.ly'.format(file_name)):
+		subprocess.run("lilypond --pdf ../bin/ly_files/{0}.ly".format(file_name))
 		os.startfile("{0}.pdf".format(file_name))
 	else:
-		print('Please make sure that you inputted a valid .ly file name, and moved it into the ./ly_files/ directory.')
-		raise FileNotFoundError('Program was unable to find file {0}.ly in the ./ly_files/ directory.'.format(file_name))
+		print('Please make sure that you inputted a valid .ly file name, and moved it into the /bin/ly_files/ directory.')
+		raise FileNotFoundError('Program was unable to find file {0}.ly in the /bin/ly_files/ directory.'.format(file_name))
 
 def write_ly_file(file_name, note_list, song_name=None, generate_explicit_staff=True):
 	"""
@@ -27,7 +27,7 @@ def write_ly_file(file_name, note_list, song_name=None, generate_explicit_staff=
 		song_name = file_name
 
 	# Begin writing .ly file with the lilypond version and title information
-	f = open('./ly_files/{0}.ly'.format(file_name), "w+", encoding="utf-8")
+	f = open('../bin/ly_files/{0}.ly'.format(file_name), "w+", encoding="utf-8")
 	f.write('\\version \"2.16.0\" % necessary for upgrading to future LilyPond versions.\n\n')
 	header_str = '\\header{\n'
 	title_str = '\ttitle = \"Tablature for the song {0}\"\n'.format(song_name)
