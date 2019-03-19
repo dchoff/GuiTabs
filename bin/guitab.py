@@ -1,6 +1,7 @@
 import subprocess
 from sys import argv
 import os
+from collections import namedtuple, deque
 
 def generate_pdf(file_name):
 	"""
@@ -88,7 +89,114 @@ def write_ly_file(file_name, note_list, song_name=None, generate_explicit_staff=
 
 	f.write(note_wrapper_tab + note_lines + end_wrapper)
 
+"""
+Setting up weighted Graph class and Edge namedtuples for running Dijkstra's
+"""
 
+inf = float('inf')
+Edge = namedtuple('Edge', 'parent, child, distance')
+
+def distance(note_tuple1, note_tuple2):
+	# TO DO - Need to implement distance metric between note tuples, as well as finalize what information we want
+	# in said tuples
+
+def make_edge(parent, child):
+	"""
+	Input: Start and end point of an edge
+	Output: An edge as represented by the namedtuple containing its parent node, child node, and distance between the two 
+	"""
+	return Edge(parent, child, distance(parent, child))
+
+class Graph:
+	def __init__(self, vertices, edges):
+		self.edges = [make_edge(*edge) for edge in edges]
+		self.vertices = vertices
+
+	@property
+	def neighbors(self):
+		neighbors = {vertex: set() for vertex in self.vertices}
+		for edge in self.edges:
+			neighbors[edge.parent].add((edge.child, edge.distance))
+
+		return neighbors
+
+	def dijkstra(self, source, destination):
+		"""
+		Input: A source and destination vertex
+		Output: The shortest path between source and destination in the weighted graph calling this function
+		"""
+		distances = {vertex: inf for vertex in self.vertices}
+		prev = {vertex: None for vertex in self.vertices}
+
+		distances[source] = 0
+		vertices = self.vertices.copy()
+
+		while len(vertices) != 0:
+			curr = min(vertices, key=lambda v: distances[v])
+			vertices.remove(curr)
+
+			if distances[curr] == inf:
+				break
+
+			for neighbor, dist in self.neighbors[curr]:
+				route = distances[curr] + dist
+				if route < distances[neighbor]:
+					distances[neighbor] = route
+					prev[neighbor] = curr
+
+		shortest_path, curr = deque(), destination
+
+		while prev[curr] is not None:
+			shortest_path.appendleft(curr)
+			curr = prev[curr]
+
+		if shortest_path:
+			shortest_path.appendleft(curr)
+
+		return shortest_path
+	
+def generate_finger_options(note_series):
+	notes_on_string = [
+	["E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5", "C6", "C#6", "D6" ],
+	["B3", "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5" ],
+	["G3", "G#3", "A3", "A#3", "B3", "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5", "C#5", "D5", "D#5", "E5", "F5" ],
+	["D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3", "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5" ],
+	["A2", "A#2", "B2", "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3", "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4" ],
+	["E2", "F2", "F#2", "G2", "G#2", "A2", "A#2", "B2", "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3", "C4", "C#4", "D4" ]
+	]
+	# Fret numbers for reference
+	# 0     1     2      3     4      5     6      7     8     9      10 	11	   12    13     14     15    16    17    18     19    20     21    22
+
+	# Index n refers to string n+1 in the above "notes_on_string" list
+	# For the above picture, see the following image:
+	# https://www.researchgate.net/figure/Notes-on-a-guitar-fretboard_fig1_255587183	
+	
+	# Turn note_series into "layers" of vertices
+	# Each layer contains all the possible note_tuples for a given note (e.g. (note, string number, fret number, hand position, finger on fret))
+	# Given notes are tuples such as note_tuple = (note, string number, fret number, hand position, finger on fret)
+	# edges are simply 2-tuples, (note_tuple1, note_tuple2)
+	
+	vertex_layers = []
+	start_note = None
+	vertex_layers.append(start_note)
+	
+	# append actual layers
+	
+	end_note = None
+	vertex_layers.append(end_note)
+	
+	# For the first layer, generate a special "start_note" tuple with 0 edge weight to give a source for our graph search
+	# For the final layer, generate a special "end_note" tuple with 0 edge weight to give a destination for our graph search
+	# after generating the "layers" of vertices, generate the edges between each two layers
+	# For a layer l_i s.t. |l_i| = m, and l_{i+1} s.t. |l_{i+1}| = n, we will have mn edges
+	
+	# Finally, generate our graph with the total set of vertices and edges, and run dijkstra's between our start_note and end_note
+	# Then just parse the returned vertex path to get the optimal fingering for our note series
+	graph = Graph(vertices, edges)
+	shortest_path = graph.dijkstra(start_note, end_note)
+	
+	return shortest_path
+	
 
 if __name__ == "__main__":
 	example_notes = ['C4', 'E5', 'E4', 'D4', 'D#4', 'E4']
