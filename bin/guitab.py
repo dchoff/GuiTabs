@@ -2,8 +2,21 @@ import subprocess
 from sys import argv
 import os
 from collections import namedtuple, deque
+from librosa.core import note_to_midi
+from time import sleep
 
 def generate_pdf(file_name):
+	file_name = "".join(file_name.strip())
+	if os.path.isfile('../bin/mscx_files/{0}.mscx'.format(file_name)):
+		subprocess.run("MuseScore3 ../bin/mscx_files/{0}.mscx -o {0}.pdf".format(file_name))
+		sleep(1)
+		os.startfile("{0}.pdf".format(file_name))
+	else:
+		print('Please make sure that you inputted a valid .mscx file name, and have it located in the /bin/mscx_files/ directory.')
+		raise FileNotFoundError('Program was unable to find file {0}.mscx in the /bin/mscx_files/ directory.'.format(file_name))
+
+
+def generate_ly_pdf(file_name):
 	"""
 	Input: A file_name with no file type suffix
 	Output: A PDF which is opened in a new window
@@ -14,6 +27,52 @@ def generate_pdf(file_name):
 	else:
 		print('Please make sure that you inputted a valid .ly file name, and moved it into the /bin/ly_files/ directory.')
 		raise FileNotFoundError('Program was unable to find file {0}.ly in the /bin/ly_files/ directory.'.format(file_name))
+
+def write_mscx_file(file_name, note_list):
+	file_name = "".join(file_name.strip())
+	tpc_vals = {"F":13, "C":14, "G" : 15, "D" : 16, "A": 17, "E" : 18, "B" : 19, "F#":20, "C#":21, "G#":22, "D#":23, "A#":24, "E#":25, "B#":26}
+
+	f = open('../bin/mscx_files/{0}.mscx'.format(file_name), "w+", encoding="utf-8")
+	f_template = open('../bin/mscx_files/file_template.mscx', 'r', encoding="utf-8")
+	for line in f_template:
+		f.write(line)
+
+	f_template.close()
+
+	measure_template = "\n<Measure><voice>{0}</voice></Measure>\n"
+	note_template = "\n<Chord><durationType>quarter</durationType><Note><pitch>{3}</pitch><tpc>{4}</tpc><Fingering><text>{2}</text></Fingering><fret>{1}</fret><string>{0}</string></Note></Chord>\n"
+	closing_line = "</Staff>\n\t</Score>\n</museScore>\n\n"
+
+	note_path = list(generate_finger_options(note_list))
+	note_path = note_path[1:-1]
+
+	measure_str = ""
+	note_str = ""
+	curr_measure = measure_template
+	curr_note = note_template
+	for i, note in enumerate(note_path):
+
+		curr_note = curr_note.format(note.string, note.fret, note.finger, note_to_midi(note.pitch), tpc_vals[note.pitch[:-1]])
+		note_str = note_str + curr_note
+		curr_note = note_template
+
+		if (i+1) % 4 == 0: 
+			curr_measure = curr_measure.format(note_str)
+			note_str = ""
+			measure_str = measure_str + curr_measure
+			curr_measure = measure_template
+
+
+	if len(note_str) != 0:
+		curr_measure = curr_measure.format(note_str)
+		note_str = ""
+		measure_str = measure_str + curr_measure
+		curr_measure = measure_template
+
+	f.write(measure_str)
+	f.write(closing_line)
+
+
 
 def write_ly_file(file_name, note_list, song_name=None, generate_explicit_staff=True):
 	"""
@@ -95,7 +154,7 @@ Setting up weighted Graph class and Edge namedtuples for running Dijkstra's
 
 inf = float('inf')
 Edge = namedtuple('Edge', 'parent, child, distance')
-Note = namedtuple('Note', 'pitch, string, fret, position, finger')
+Note = namedtuple('Note', 'pitch, string, fret, position, finger, occcurrence')
 # Note has the following attributes: pitch, string, fret, position, finger
 # Pitch refers to the explicit note pitch, e.g. A#4
 # String refers to the string number the note is played on, 1 through 6
@@ -111,34 +170,57 @@ def distance(note1, note2):
 
 	# If the next note is an open string, just give it a small weight and penalize shifting your hands much less
 	if note2.fret == 0:
-		return 1 + abs(note2.position - note1.position)
+		return 1 + abs(note2.position - note1.position)**4
 
 	# If the same fret is being played on the same string, just switching off fingers, penalize it less
 	if note1.fret == note2.fret and note1.string == note2.string:
 		return abs(note2.finger - note1.finger) + 1
 
+	if note2.finger == 2 and note2.fret - note2.position == 0:
+		dist += 10**2
+
+	if note1.position == note2.position and note1.fret == note2.fret and note1.string != note2.string:
+		if note1.string < note2.string and note2.finger > note1.finger:
+			return inf
+
+	if note1.position != note2.position and note1.finger == note2.finger:
+		fret_string_dist = (note2.fret - note1.fret)**3 + (note2.string - note1.string)**4
+		dist += (5*(note2.position - note1.position))**2 +  fret_string_dist
+
+
 	# Stretching more than 4 frets is pretty much impossible unless you have some legitimately ridiculous hands or are playing VERY high up on the fretboard
 	# If you're high up on the fretboard, stretching more than 6 is pretty much unneccessary
-	if note1.position == note2.position:
-		stretch_amt = abs(note2.fret - note2.fret) 
+	if note1.position == note2.position and not note1.fret == 0:
+		stretch_amt = abs(note2.fret - note1.fret) 
 		if note1.position >= 10:
 			if stretch_amt > 6:
 				return inf
 
 		else:
-			if stretch_amt > 4:
+			if stretch_amt > 4 :
 				return inf
 
 		dist += 2*stretch_amt + abs(note2.string - note1.string)
 
+	if note1.finger != note2.finger and note2.finger > note1.finger:
+		finger_diff = note2.finger - note1.finger
+		fret_diff = note2.fret - note1.fret
+
+		dist += ((5*fret_diff)**3)/(4*finger_diff**2)
+
+	if note1.finger == note2.finger and not note1.fret == 0 and not note2.fret == 0:
+		dist += (5 * abs(note1.string - note2.string))**3
 
 	# Heavily penalize the need to shift relative position of hand (e.g. moving hand from bottom of fretboard to top of fretboard)
 	# Penalize shifting from high up to lower slightly less
 	if note1.position != note2.position:
 		if note2.position > note1.position:
-			dist += (3 * (note2.position - note1.position))**2
+			dist += (3 * (note2.position - note1.position))**4
 		else:
 			dist += (2 * (note2.position - note1.position))**2
+
+	dist += note1.position**4
+	dist += note2.position**6
 
 	return dist
 
@@ -221,14 +303,43 @@ def generate_finger_options(note_series):
 	# edges are simply 2-tuples, (note_tuple1, note_tuple2)
 	
 	vertex_layers = []
-	start_note = Note("START", None, None, None, None)
-	vertex_layers.append(start_note)
+	start_note = Note("START", None, None, None, None, None)
+	vertex_layers.append([start_note])
 	
-	# append actual layers
-	
-	end_note = Note("END", None, None, None, None)
-	vertex_layers.append(end_note)
-	
+	# Note = namedtuple('Note', 'pitch, string, fret, position, finger')
+	occurrence = 0
+	for note in note_series:
+		note_vertices = []
+		for i, string in enumerate(notes_on_string):
+			if note in string:
+				fret = string.index(note)
+				if fret == 0:
+					for position in range(1, 17):
+						note_vertices.append(Note(note, i+1, fret, position, 0, occurrence))
+				else:
+					fret_index = fret - 4
+					if fret_index <= 0:
+						fret_index = 1
+					for position in range(fret_index, fret+1):
+						stretch_distance = fret - position
+						if stretch_distance >= 3:
+							note_vertices.append(Note(note, i+1, fret, position, 4, occurrence))
+
+						if stretch_distance == 0:
+							note_vertices.append(Note(note, i+1, fret, position, 1, occurrence))
+							note_vertices.append(Note(note, i+1, fret, position, 2, occurrence))
+
+						if stretch_distance == 1:
+							note_vertices.append(Note(note, i+1, fret, position, 2, occurrence))
+
+						if stretch_distance == 2:
+							note_vertices.append(Note(note, i+1, fret, position, 3, occurrence))
+		occurrence += 1
+
+		vertex_layers.append(note_vertices)
+
+	end_note = Note("END", None, None, None, None, None)
+	vertex_layers.append([end_note])
 	# For the first layer, generate a special "start_note" tuple with 0 edge weight to give a source for our graph search
 	# For the final layer, generate a special "end_note" tuple with 0 edge weight to give a destination for our graph search
 	# after generating the "layers" of vertices, generate the edges between each two layers
@@ -236,6 +347,17 @@ def generate_finger_options(note_series):
 	
 	# Finally, generate our graph with the total set of vertices and edges, and run dijkstra's between our start_note and end_note
 	# Then just parse the returned vertex path to get the optimal fingering for our note series
+	vertices = []
+	edges = []
+	for index in range(len(vertex_layers) - 1):
+		print('Configuring layer: {0} -> {1}'.format(index, index+1))
+		for parent in vertex_layers[index]:
+			vertices.append(parent)
+			for child in vertex_layers[index+1]:
+				edges.append((parent, child))
+
+	vertices.append(end_note)
+
 	graph = Graph(vertices, edges)
 	shortest_path = graph.dijkstra(start_note, end_note)
 	
@@ -243,6 +365,13 @@ def generate_finger_options(note_series):
 	
 
 if __name__ == "__main__":
-	example_notes = ['C4', 'E5', 'E4', 'D4', 'D#4', 'E4']
-	write_ly_file('Example1', example_notes)
+	# example_notes = ['C4', 'E5', 'E4', 'D4', 'D#4', 'E4']
+	example_notes = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4']
+	shortest_path = generate_finger_options(example_notes)
+	for x in shortest_path:
+		print(x)
+
+	write_mscx_file('Example1', example_notes)
 	generate_pdf('Example1')
+	# write_ly_file('Example1', example_notes)
+	# generate_pdf('Example1')

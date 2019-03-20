@@ -9,11 +9,11 @@
 
 \new Staff {
 	c' e'' e' d' 
-	dis' e' 
+	dis' e'  \bar "|."
 }
 
 \new TabStaff {
 	c' e'' e' d' 
-	dis' e' 
+	dis' e'  \bar "|."
 }
 
