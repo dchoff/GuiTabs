@@ -45,7 +45,7 @@ def write_ly_file(file_name, note_list, song_name=None, generate_explicit_staff=
 	if generate_explicit_staff:
 		note_wrapper_explicit = '\\new Staff {\n'
 
-	end_wrapper = '\n}\n\n'
+	end_wrapper = ' \\bar "|."\n}\n\n'
 	note_lines = '\t'
 	for note in note_list:
 		note = note.lower()
@@ -95,10 +95,54 @@ Setting up weighted Graph class and Edge namedtuples for running Dijkstra's
 
 inf = float('inf')
 Edge = namedtuple('Edge', 'parent, child, distance')
+Note = namedtuple('Note', 'pitch, string, fret, position, finger')
+# Note has the following attributes: pitch, string, fret, position, finger
+# Pitch refers to the explicit note pitch, e.g. A#4
+# String refers to the string number the note is played on, 1 through 6
+# Fret refers to the fret the note will be played on
+# Position refers to the hand position at time of playing (unless it's an open note, this must be within the range of fret and fret - 6)
+# Finger refers to the finger that should be playing the note (1 through 4, index, middle, ring, and pinky)
+def distance(note1, note2):
+	# If it's a starting or ending pair, there is no distance between the two
+	if note1.pitch == "START" or note2.pitch == "END":
+		return 0
 
-def distance(note_tuple1, note_tuple2):
-	# TO DO - Need to implement distance metric between note tuples, as well as finalize what information we want
-	# in said tuples
+	dist = 0
+
+	# If the next note is an open string, just give it a small weight and penalize shifting your hands much less
+	if note2.fret == 0:
+		return 1 + abs(note2.position - note1.position)
+
+	# If the same fret is being played on the same string, just switching off fingers, penalize it less
+	if note1.fret == note2.fret and note1.string == note2.string:
+		return abs(note2.finger - note1.finger) + 1
+
+	# Stretching more than 4 frets is pretty much impossible unless you have some legitimately ridiculous hands or are playing VERY high up on the fretboard
+	# If you're high up on the fretboard, stretching more than 6 is pretty much unneccessary
+	if note1.position == note2.position:
+		stretch_amt = abs(note2.fret - note2.fret) 
+		if note1.position >= 10:
+			if stretch_amt > 6:
+				return inf
+
+		else:
+			if stretch_amt > 4:
+				return inf
+
+		dist += 2*stretch_amt + abs(note2.string - note1.string)
+
+
+	# Heavily penalize the need to shift relative position of hand (e.g. moving hand from bottom of fretboard to top of fretboard)
+	# Penalize shifting from high up to lower slightly less
+	if note1.position != note2.position:
+		if note2.position > note1.position:
+			dist += (3 * (note2.position - note1.position))**2
+		else:
+			dist += (2 * (note2.position - note1.position))**2
+
+	return dist
+
+
 
 def make_edge(parent, child):
 	"""
@@ -177,12 +221,12 @@ def generate_finger_options(note_series):
 	# edges are simply 2-tuples, (note_tuple1, note_tuple2)
 	
 	vertex_layers = []
-	start_note = None
+	start_note = Note("START", None, None, None, None)
 	vertex_layers.append(start_note)
 	
 	# append actual layers
 	
-	end_note = None
+	end_note = Note("END", None, None, None, None)
 	vertex_layers.append(end_note)
 	
 	# For the first layer, generate a special "start_note" tuple with 0 edge weight to give a source for our graph search
