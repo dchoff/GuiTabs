@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import librosa
 import timestamp_to_pitch as tp
 import read_csv_onsets as rco
@@ -30,7 +32,7 @@ def main(name):
 	#run crepe
 	duration, notes = rco.fileOnsetsToDurationsNotes(name[:-4])
 	#call lilypond
-	gt.write_ly_file(name[:-4], notes)
+	gt.write_mscx_file(name[:-4], notes)
 	gt.generate_pdf(name[:-4])
 	print(notes, round_bt)
 	end = timer()
