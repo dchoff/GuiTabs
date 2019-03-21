@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import librosa
-import timestamp_to_pitch as tp
+
 import read_csv_onsets as rco
 import numpy as np	
 from timeit import default_timer as timer
