@@ -111,12 +111,18 @@ def findDurationsNotes(pitches_and_times):
         duration = end_time - start_time
         if float(pitch) == 0.0:
            continue
+        notes, durations = elimArtifacts(float(pitch), notes, duration, durations)
+    durations,notes = combineNotes(durations, notes)
+    return durations, notes
+           
+def elimArtifacts(pitch, notes, duration, durations):
+    if(pitch > 82 and pitch < 1175):
         note = librosa.hz_to_note(float(pitch))
         durations.append(round(duration,2))
         notes.append(note)
-    durations,notes = combineNotes(durations, notes)
-    return durations, notes
-            
+    return notes, durations
+	
+		   
 def combineNotes(durations, notes):
     for i in range(len(notes)):
         if i == 0:
