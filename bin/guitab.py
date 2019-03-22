@@ -315,7 +315,7 @@ def generate_finger_options(note_series):
 				fret = string.index(note)
 				if fret == 0:
 					for position in range(1, 17):
-						note_vertices.append(Note(note, i+1, fret, position, 0, occurrence))
+						note_vertices.append(Note(note, i, fret, position, 0, occurrence))
 				else:
 					fret_index = fret - 4
 					if fret_index <= 0:
@@ -323,17 +323,17 @@ def generate_finger_options(note_series):
 					for position in range(fret_index, fret+1):
 						stretch_distance = fret - position
 						if stretch_distance >= 3:
-							note_vertices.append(Note(note, i+1, fret, position, 4, occurrence))
+							note_vertices.append(Note(note, i, fret, position, 4, occurrence))
 
 						if stretch_distance == 0:
-							note_vertices.append(Note(note, i+1, fret, position, 1, occurrence))
-							note_vertices.append(Note(note, i+1, fret, position, 2, occurrence))
+							note_vertices.append(Note(note, i, fret, position, 1, occurrence))
+							note_vertices.append(Note(note, i, fret, position, 2, occurrence))
 
 						if stretch_distance == 1:
-							note_vertices.append(Note(note, i+1, fret, position, 2, occurrence))
+							note_vertices.append(Note(note, i, fret, position, 2, occurrence))
 
 						if stretch_distance == 2:
-							note_vertices.append(Note(note, i+1, fret, position, 3, occurrence))
+							note_vertices.append(Note(note, i, fret, position, 3, occurrence))
 		occurrence += 1
 
 		vertex_layers.append(note_vertices)
