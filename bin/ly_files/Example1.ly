@@ -8,12 +8,20 @@
 
 
 \new Staff {
-	c' e'' e' d' 
-	dis' e'  \bar "|."
+	a, c d e g 
+	a c' d' e' 
+	g' a' c'' a' 
+	g' e' d' c' 
+	a g e d c a, 
+	 \bar "|."
 }
 
 \new TabStaff {
-	c' e'' e' d' 
-	dis' e'  \bar "|."
+	a, c d e g 
+	a c' d' e' 
+	g' a' c'' a' 
+	g' e' d' c' 
+	a g e d c a, 
+	 \bar "|."
 }
 

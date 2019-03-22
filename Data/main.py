@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import librosa
-
 import read_csv_onsets as rco
 import numpy as np	
 from timeit import default_timer as timer

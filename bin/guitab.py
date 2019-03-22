@@ -219,8 +219,8 @@ def distance(note1, note2):
 		else:
 			dist += (2 * (note2.position - note1.position))**2
 
-	dist += note1.position**4
-	dist += note2.position**6
+	dist += (note1.position - note2.position)**6
+	# dist += note1.position**3
 
 	return dist
 
@@ -366,12 +366,13 @@ def generate_finger_options(note_series):
 
 if __name__ == "__main__":
 	# example_notes = ['C4', 'E5', 'E4', 'D4', 'D#4', 'E4']
-	# example_notes = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4']
-	example_notes = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4',  'B4', 'C4',  'C4', 'D3', 'B4', 'A4', 'A4', 'G4', 'F4', 'E4', 'E4', 'E4', 'D4', 'C4', 'B3', 'A3', 'A3', 'G3', 'F3', 'E3', 'D3', 'D4', 'C3']
+	example_notes = ['A2', 'C3', 'D3', 'E3', 'G3', 'A3', 'C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'A4', 'G4', 'E4', 'D4', 'C4', 'A3', 'G3', 'E3', 'D3', 'C3', 'A2']
+	#example_notes = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4',  'B4', 'C4',  'C4', 'D3', 'B4', 'A4', 'A4', 'G4', 'F4', 'E4', 'E4', 'E4', 'D4', 'C4', 'B3', 'A3', 'A3', 'G3', 'F3', 'E3', 'D3', 'D4', 'C3']
 	shortest_path = generate_finger_options(example_notes)
 	for x in shortest_path:
 		print(x)
-
+	write_ly_file('Example1', example_notes)
+	generate_ly_pdf('Example1')
 	write_mscx_file('Example1', example_notes)
 	generate_pdf('Example1')
 	# write_ly_file('Example1', example_notes)
